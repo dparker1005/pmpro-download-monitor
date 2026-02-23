@@ -15,7 +15,7 @@ if ( function_exists( 'pmpro_hasMembershipLevel' ) ) {
 		if ( $dlm_download->exists() ) {
 			?>
 			<a class="download-link" href="<?php 
-				if(count($download_membership_levels) > 1)
+				if(count($download_membership_levels[0]) > 1 || empty($download_membership_levels[0][0]))
 					echo pmpro_url('levels');
 				else
 					echo pmpro_url("checkout", "?level=" . $download_membership_levels[0][0], "https");

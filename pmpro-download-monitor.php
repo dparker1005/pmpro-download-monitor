@@ -13,8 +13,16 @@ Author URI: http://www.strangerstudios.com
 function pmprodlm_page_meta_wrapper() {
 	add_meta_box( 'pmpro_page_meta', 'Require Membership', 'pmpro_page_meta', 'dlm_download', 'side' );
 }
+function pmprodlm_restrictable_post_types( $post_types ) {
+	$post_types[] = 'dlm_download';
+	return array_unique( $post_types );
+}
 function pmprodlm_cpt_init() {
-	if ( is_admin() )
+	// PMPro versions with this REST route also support the pmpro_restrictable_post_types
+	// filter. Older PMPro versions need the legacy admin_menu metabox fallback.
+	if ( class_exists( 'PMPro_REST_API_Routes' ) && method_exists( 'PMPro_REST_API_Routes', 'pmpro_rest_api_get_post_restrictions' ) )
+		add_filter( 'pmpro_restrictable_post_types', 'pmprodlm_restrictable_post_types' );
+	elseif ( is_admin() )
 		add_action( 'admin_menu', 'pmprodlm_page_meta_wrapper' );
 }
 add_action( "init", "pmprodlm_cpt_init", 20 );
@@ -37,16 +45,16 @@ function pmprodlm_getDownloadLevels($dlm_download)
 	 //hide levels which don't allow signups by default
 	if(!apply_filters("pmpro_membership_content_filter_disallowed_levels", false, $download_membership_levels_ids, $download_membership_levels_names))
 	{
-		foreach($download_membership_levels_ids as $key=>$id)
-		{
-			//does this level allow registrations?
-			$level_obj = pmpro_getLevel($id);
-			if(!$level_obj->allow_signups)
+			foreach($download_membership_levels_ids as $key=>$id)
 			{
-				unset($download_membership_levels_ids[$key]);
-				unset($download_membership_levels_names[$key]);
+				//does this level allow registrations?
+				$level_obj = pmpro_getLevel($id);
+				if(empty($level_obj) || !$level_obj->allow_signups)
+				{
+					unset($download_membership_levels_ids[$key]);
+					unset($download_membership_levels_names[$key]);
+				}
 			}
-		}
 	}
 
 	$download_membership_levels_names = pmpro_implodeToEnglish($download_membership_levels_names, 'or');
@@ -57,21 +65,51 @@ function pmprodlm_getDownloadLevels($dlm_download)
 /*
  * Require Membership on the Download
 */
-function pmprodlm_can_download( $download, $version ) {
-	$download_id = $version->post->ID;
+function pmprodlm_can_download( $can_download, $download ) {
+	if ( !$can_download ) {
+		return $can_download;
+	}
+
 	if ( function_exists( 'pmpro_hasMembershipLevel' ) ) {
-		//need to setup post global
-		global $post;
-		$post = get_post($download_id);
+		$download_id = ( is_object( $download ) && method_exists( $download, 'get_id' ) ) ? $download->get_id() : 0;
+		if ( empty( $download_id ) ) {
+			return $can_download;
+		}
 
 		//check for membership
 		if ( !pmpro_has_membership_access($download_id) ) {
-			$download = false;
+			$can_download = false;
 		}
 	}
-	return $download;
+	return $can_download;
 }
 add_filter( 'dlm_can_download', 'pmprodlm_can_download', 10, 2 );
+
+function pmprodlm_get_download( $download_id ) {
+	$download_id = intval( $download_id );
+	if ( empty( $download_id ) ) {
+		return false;
+	}
+
+	if ( function_exists( 'download_monitor' ) ) {
+		try {
+			$dlm_download = download_monitor()->service( 'download_repository' )->retrieve_single( $download_id );
+			if ( !empty( $dlm_download ) && $dlm_download->exists() ) {
+				return $dlm_download;
+			}
+		} catch ( Exception $e ) {
+		}
+	}
+
+	if ( class_exists( 'DLM_Download' ) ) {
+		$dlm_download = new DLM_Download( $download_id );
+		if ( !empty( $dlm_download ) && $dlm_download->exists() ) {
+			return $dlm_download;
+		}
+	}
+
+	return false;
+}
 
 function pmprodlm_dlm_get_template_part( $template, $slug, $name ) {	
 	if($name == 'pmpro')
@@ -91,12 +129,12 @@ function pmprodlm_shortcode_download_content( $content, $download_id, $atts ) {
 	if(empty($atts['template']) && (function_exists( 'pmpro_hasMembershipLevel' )) ) {
 		if ( !pmpro_has_membership_access( $download_id ) ) 
 		{
-			$dlm_download = new DLM_Download( $download_id );
-			if ( $dlm_download->exists() ) 
+			$dlm_download = pmprodlm_get_download( $download_id );
+			if ( !empty( $dlm_download ) && $dlm_download->exists() ) 
 			{
 				$download_membership_levels = pmprodlm_getDownloadLevels($dlm_download);	
 				$content .= '<a href="';
-				if(count($download_membership_levels[0]) > 1)
+				if(count($download_membership_levels[0]) > 1 || empty($download_membership_levels[0][0]))
 					$content .= pmpro_url('levels');
 				else
 					$content .= pmpro_url("checkout", "?level=" . $download_membership_levels[0][0], "https");
@@ -127,6 +165,18 @@ function pmprodlm_dlm_no_access_after_message($download) {
 				$post_membership_levels_names = $hasaccess[2];
 				$hasaccess = $hasaccess[0];
 			}
+
+			// PMPro 3.1+ message handling.
+			if ( function_exists( 'pmpro_get_no_access_message' ) ) {
+				if(empty($post_membership_levels_ids))
+					$post_membership_levels_ids = array();
+				if(empty($post_membership_levels_names))
+					$post_membership_levels_names = array();
+
+				echo pmpro_get_no_access_message( '', $post_membership_levels_ids, $post_membership_levels_names );
+				return;
+			}
+
 			if(empty($post_membership_levels_ids))
 				$post_membership_levels_ids = array();
 			if(empty($post_membership_levels_names))
