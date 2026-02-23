@@ -15,7 +15,7 @@
  * Add Require Membership box to dlm_download CPT
  */
 function pmprodlm_page_meta_wrapper() {
-	add_meta_box( 'pmpro_page_meta', 'Require Membership', 'pmpro_page_meta', 'dlm_download', 'side' );
+	add_meta_box( 'pmpro_page_meta', esc_html__( 'Require Membership', 'pmpro-download-monitor' ), 'pmpro_page_meta', 'dlm_download', 'side' );
 }
 function pmprodlm_restrictable_post_types( $post_types ) {
 	$post_types[] = 'dlm_download';
@@ -131,24 +131,24 @@ add_filter('dlm_get_template_part', 'pmprodlm_dlm_get_template_part', 10, 3);
 function pmprodlm_shortcode_download_content( $content, $download_id, $atts ) {
 	global $current_user;
 	if(empty($atts['template']) && (function_exists( 'pmpro_hasMembershipLevel' )) ) {
-		if ( !pmpro_has_membership_access( $download_id ) ) 
+		if ( !pmpro_has_membership_access( $download_id ) )
 		{
 			$dlm_download = pmprodlm_get_download( $download_id );
-			if ( !empty( $dlm_download ) && $dlm_download->exists() ) 
+			if ( !empty( $dlm_download ) && $dlm_download->exists() )
 			{
-				$download_membership_levels = pmprodlm_getDownloadLevels($dlm_download);	
+				$download_membership_levels = pmprodlm_getDownloadLevels($dlm_download);
 				$content .= '<a href="';
 				if(count($download_membership_levels[0]) > 1 || empty($download_membership_levels[0][0]))
-					$content .= pmpro_url('levels');
+					$content .= esc_url( pmpro_url('levels') );
 				else
-					$content .= pmpro_url("checkout", "?level=" . $download_membership_levels[0][0], "https");
-				$content .= '">' . $dlm_download->get_the_title() . '</a>';
-				$content .= ' (' . __('Membership Required','pmprodlm') . ': ' . $download_membership_levels[1] . ')';
+					$content .= esc_url( pmpro_url("checkout", "?level=" . $download_membership_levels[0][0], "https") );
+				$content .= '">' . esc_html( $dlm_download->get_the_title() ) . '</a>';
+				$content .= ' (' . esc_html__( 'Membership Required', 'pmpro-download-monitor' ) . ': ' . esc_html( $download_membership_levels[1] ) . ')';
 				$content = apply_filters("pmprodlm_shortcode_download_content_filter", $content);
 			} 
 			else 
 			{
-				$content = '[' . __( 'Download not found', 'download-monitor' ) . ']';
+				$content = '[' . esc_html__( 'Download not found', 'pmpro-download-monitor' ) . ']';
 			}
 		}
 	}
@@ -232,8 +232,8 @@ function pmprodlm_plugin_row_meta($links, $file) {
 	if(strpos($file, 'pmpro-download-monitor.php') !== false)
 	{
 		$new_links = array(
-			'<a href="' . esc_url('https://www.paidmembershipspro.com/add-ons/pmpro-download-monitor/')  . '" title="' . esc_attr( __( 'View Documentation', 'pmpro' ) ) . '">' . __( 'Docs', 'pmpro' ) . '</a>',
-			'<a href="' . esc_url('https://www.paidmembershipspro.com/support/') . '" title="' . esc_attr( __( 'Visit Customer Support Forum', 'pmpro' ) ) . '">' . __( 'Support', 'pmpro' ) . '</a>',
+			'<a href="' . esc_url('https://www.paidmembershipspro.com/add-ons/pmpro-download-monitor/')  . '" title="' . esc_attr__( 'View Documentation', 'pmpro-download-monitor' ) . '">' . esc_html__( 'Docs', 'pmpro-download-monitor' ) . '</a>',
+			'<a href="' . esc_url('https://www.paidmembershipspro.com/support/') . '" title="' . esc_attr__( 'Visit Customer Support Forum', 'pmpro-download-monitor' ) . '">' . esc_html__( 'Support', 'pmpro-download-monitor' ) . '</a>',
 		);
 		$links = array_merge($links, $new_links);
 	}
