@@ -1,19 +1,26 @@
 === Paid Memberships Pro - Download Monitor Integration Add On ===
-Contributors: strangerstudios
+Contributors: strangerstudios, paidmembershipspro
 Tags: paid memberships pro, pmpro, membership, memberships, download monitor, restrict downloads
-Requires at least: 3.5
-Tested up to: 4.9.2
+Requires at least: 5.4
+Tested up to: 6.9
+Requires PHP: 5.6
 Stable tag: .2.1
+License: GPLv2 or later
+License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
 Require membership for downloads when using the Download Monitor plugin.
 
 == Description ==
 
-The Download Monitor Integration Add On for Paid Memberships Pro adds a "Require Membership" meta box to the "Edit Download" page, allowing you to easily toggle the membership level(s) that can access the download. 
+The Download Monitor Integration Add On for Paid Memberships Pro adds a "Require Membership" meta box to the "Edit Download" page, allowing you to easily toggle the membership level(s) that can access the download.
 
 When using the [download] shortcode, you can now use the templates: "pmpro", "pmpro_box", "pmpro_button", "pmpro_filename", "pmpro_title" to show the non-member a link to the membership levels page and a list of the levels that are required to download the file.
 
 Requires Download Monitor (https://wordpress.org/plugins/download-monitor/) and Paid Memberships Pro installed and activated.
+
+== Official Paid Memberships Pro Add On ==
+
+This is an official Add On for [Paid Memberships Pro](https://www.paidmembershipspro.com), the most complete member management and membership subscriptions plugin for WordPress.
 
 == Installation ==
 
