@@ -7,8 +7,8 @@
  * Author: Paid Memberships Pro
  * Author URI: https://www.paidmembershipspro.com
  * Text Domain: pmpro-download-monitor
+ * Domain Path: /languages
  * License: GPLv2 or later
- * License URI: https://www.gnu.org/licenses/gpl-2.0.html
  */
 
 /*
