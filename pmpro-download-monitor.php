@@ -195,6 +195,7 @@ add_filter( 'dlm_get_template_part', 'pmprodlm_dlm_get_template_part', 10, 4 );
  */
 function pmprodlm_dlm_no_access_after_message($download) {
 	global $current_user;
+	$content = '';
 	if ( function_exists( 'pmpro_hasMembershipLevel' ) ) {
 		if ( !pmpro_has_membership_access( $download->get_id() ) ) 
 		{
@@ -214,7 +215,7 @@ function pmprodlm_dlm_no_access_after_message($download) {
 				if(empty($post_membership_levels_names))
 					$post_membership_levels_names = array();
 
-				echo pmpro_get_no_access_message( '', $post_membership_levels_ids, $post_membership_levels_names );
+				echo wp_kses_post( pmpro_get_no_access_message( '', $post_membership_levels_ids, $post_membership_levels_names ) );
 				return;
 			}
 
@@ -240,9 +241,8 @@ function pmprodlm_dlm_no_access_after_message($download) {
 		
 			$pmpro_content_message_pre = '<div class="pmpro_content_message">';
 			$pmpro_content_message_post = '</div>';
-			$content = '';
 			$sr_search = array("!!levels!!", "!!referrer!!");
-			$sr_replace = array(pmpro_implodeToEnglish($post_membership_levels_names), urlencode(site_url($_SERVER['REQUEST_URI'])));
+			$sr_replace = array(pmpro_implodeToEnglish($post_membership_levels_names), urlencode(site_url(sanitize_text_field(wp_unslash($_SERVER['REQUEST_URI'])))));
 			//get the correct message to show at the bottom
 			if($current_user->ID)
 			{
@@ -258,7 +258,7 @@ function pmprodlm_dlm_no_access_after_message($download) {
 			}
 		}
 	}
-	echo $content;	
+	echo wp_kses_post( $content );
 }
 add_action('dlm_no_access_after_message', 'pmprodlm_dlm_no_access_after_message', 10, 2);
 
