@@ -5,7 +5,7 @@
  * Shown when the current user does not have membership access to the download.
  * Matches the structure of Download Monitor's content-download-filename.php template.
  *
- * @version .3
+ * @version TBD
  *
  * @var DLM_Download       $dlm_download   The download object.
  * @var Attributes         $dlm_attributes The shortcode attributes.
