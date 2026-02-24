@@ -14,8 +14,6 @@ Require membership for downloads when using the Download Monitor plugin.
 
 The Download Monitor Integration Add On for Paid Memberships Pro adds a "Require Membership" meta box to the "Edit Download" page, allowing you to easily toggle the membership level(s) that can access the download.
 
-When using the [download] shortcode, you can now use the templates: "pmpro", "pmpro_box", "pmpro_button", "pmpro_filename", "pmpro_title" to show the non-member a link to the membership levels page and a list of the levels that are required to download the file.
-
 Requires Download Monitor (https://wordpress.org/plugins/download-monitor/) and Paid Memberships Pro installed and activated.
 
 == Official Paid Memberships Pro Add On ==
@@ -38,10 +36,6 @@ This is an official Add On for [Paid Memberships Pro](https://www.paidmembership
 1. After activation, navigate to "Downloads" to Edit or Add a New Download.
 1. Check the box for each level that can access this download in the "Require Membership" meta box (below the Publish box in the right sidebar). 
 1. Save your changes by clicking the "Update" button (or "Publish" if you are creating a new download).
-
-When using the [download] shortcode you can optionally specify the appropriate "pmpro" template. Available templates include: "pmpro", "pmpro_box", "pmpro_button", "pmpro_filename", "pmpro_title".
-
-If you do not specify a template, the output of the [download] shortcode can be filtered for a non-member by using the filter: pmprodlm_shortcode_download_content_filter. This will alter the message shown to a visitor that is not logged in or a logged in user that doesn't meet membership requirements.
 
 == Changelog ==
 = .2.1 =

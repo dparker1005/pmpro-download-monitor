@@ -11,27 +11,37 @@
  * License: GPLv2 or later
  */
 
-/*
- * Add Require Membership box to dlm_download CPT
+/**
+ * Add the dlm_download CPT to the list of PMPro restrictable post types.
+ *
+ * @since TBD
+ *
+ * @param array $post_types Array of post types that PMPro can restrict.
+ * @return array Modified array of restrictable post types.
  */
-function pmprodlm_page_meta_wrapper() {
-	add_meta_box( 'pmpro_page_meta', esc_html__( 'Require Membership', 'pmpro-download-monitor' ), 'pmpro_page_meta', 'dlm_download', 'side' );
-}
 function pmprodlm_restrictable_post_types( $post_types ) {
 	$post_types[] = 'dlm_download';
 	return array_unique( $post_types );
 }
-function pmprodlm_cpt_init() {
-	// PMPro versions with this REST route also support the pmpro_restrictable_post_types
-	// filter. Older PMPro versions need the legacy admin_menu metabox fallback.
-	if ( class_exists( 'PMPro_REST_API_Routes' ) && method_exists( 'PMPro_REST_API_Routes', 'pmpro_rest_api_get_post_restrictions' ) )
-		add_filter( 'pmpro_restrictable_post_types', 'pmprodlm_restrictable_post_types' );
-	elseif ( is_admin() )
-		add_action( 'admin_menu', 'pmprodlm_page_meta_wrapper' );
-}
-add_action( "init", "pmprodlm_cpt_init", 20 );
+add_filter( 'pmpro_restrictable_post_types', 'pmprodlm_restrictable_post_types' );
 
-function pmprodlm_getDownloadLevels($dlm_download) 
+/**
+ * Get the membership level IDs and names required for a download.
+ *
+ * Filters out levels that do not allow signups unless overridden
+ * by the pmpro_membership_content_filter_disallowed_levels filter.
+ *
+ * @since .1
+ *
+ * @param DLM_Download $dlm_download The Download Monitor download object.
+ * @return array {
+ *     Array with two elements.
+ *
+ *     @type int[]  $0 Array of membership level IDs.
+ *     @type string $1 Human-readable level names joined with "or".
+ * }
+ */
+function pmprodlm_getDownloadLevels($dlm_download)
 {
 	$hasaccess = pmpro_has_membership_access($dlm_download->get_id(), NULL, true);
 	if(is_array($hasaccess))
@@ -66,9 +76,18 @@ function pmprodlm_getDownloadLevels($dlm_download)
 	return array($download_membership_levels_ids, $download_membership_levels_names);
 }
 
-/*
- * Require Membership on the Download
-*/
+/**
+ * Check if the current user has membership access to a download.
+ *
+ * Hooked to dlm_can_download to block direct download access
+ * for users without the required membership level.
+ *
+ * @since .1
+ *
+ * @param bool         $can_download Whether the user can download the file.
+ * @param DLM_Download $download     The Download Monitor download object.
+ * @return bool Whether the user can download the file.
+ */
 function pmprodlm_can_download( $can_download, $download ) {
 	if ( !$can_download ) {
 		return $can_download;
@@ -89,73 +108,91 @@ function pmprodlm_can_download( $can_download, $download ) {
 }
 add_filter( 'dlm_can_download', 'pmprodlm_can_download', 10, 2 );
 
-function pmprodlm_get_download( $download_id ) {
-	$download_id = intval( $download_id );
-	if ( empty( $download_id ) ) {
-		return false;
+/**
+ * Swap DLM download templates for membership-restricted versions.
+ *
+ * When a download requires membership and the current user does not have access,
+ * this replaces the standard DLM template with a style-matched restricted template.
+ * Supports default, title, box, button, and filename template variants.
+ *
+ * Legacy pmpro_* template names are normalized and trigger a _doing_it_wrong notice.
+ *
+ * @since TBD
+ *
+ * @param string $template The path to the template file.
+ * @param string $slug     The template slug (e.g. 'content-download').
+ * @param string $name     The template name/variant (e.g. 'box', 'button').
+ * @param array  $args     Template arguments including the download object.
+ * @return string The path to the original or restricted template file.
+ */
+function pmprodlm_dlm_get_template_part( $template, $slug, $name, $args = array() ) {
+	// Only handle download content templates, not no-access, tc-form, etc.
+	if ( 'content-download' !== $slug ) {
+		return $template;
 	}
 
-	if ( function_exists( 'download_monitor' ) ) {
-		try {
-			$dlm_download = download_monitor()->service( 'download_repository' )->retrieve_single( $download_id );
-			if ( !empty( $dlm_download ) && $dlm_download->exists() ) {
-				return $dlm_download;
-			}
-		} catch ( Exception $e ) {
-		}
+	// Only proceed if PMPro is active and we have a download to check.
+	if ( ! function_exists( 'pmpro_hasMembershipLevel' ) ) {
+		return $template;
 	}
 
-	if ( class_exists( 'DLM_Download' ) ) {
-		$dlm_download = new DLM_Download( $download_id );
-		if ( !empty( $dlm_download ) && $dlm_download->exists() ) {
-			return $dlm_download;
-		}
+	// DLM passes the download as either 'dlm_download' or 'download' depending on the caller.
+	$dlm_download = isset( $args['dlm_download'] ) ? $args['dlm_download'] : ( isset( $args['download'] ) ? $args['download'] : null );
+	if ( empty( $dlm_download ) || ! is_object( $dlm_download ) || ! method_exists( $dlm_download, 'get_id' ) ) {
+		return $template;
 	}
 
-	return false;
-}
+	// Normalize name: strip pmpro_ prefix, treat plain 'pmpro' as default.
+	$variant = str_replace( 'pmpro_', '', $name );
+	if ( 'pmpro' === $variant ) {
+		$variant = '';
+	}
 
-function pmprodlm_dlm_get_template_part( $template, $slug, $name ) {	
-	if($name == 'pmpro')
-	{
-		$template = trailingslashit( dirname(__FILE__) ) . "templates/content-download-pmpro.php";
+	// Flag misuse of internal pmpro_ template names in shortcode/block attributes.
+	if ( $name !== $variant ) {
+		$suggested = ! empty( $variant ) ? 'template="' . $variant . '"' : 'the default template';
+		_doing_it_wrong(
+			'[download] template attribute',
+			sprintf(
+				/* translators: 1: old template name, 2: suggested replacement */
+				esc_html__( 'The "%1$s" template should no longer be used directly. Use %2$s instead.', 'pmpro-download-monitor' ),
+				esc_html( $name ),
+				esc_html( $suggested )
+			),
+			'TBD'
+		);
 	}
-	elseif(strpos($name, "pmpro_") !== false)
-	{
-		$template = trailingslashit( dirname(__FILE__) ) . "templates/content-download-" . $name . ".php";
+
+	// If user has access, return the DLM template unchanged.
+	if ( pmpro_has_membership_access( $dlm_download->get_id() ) ) {
+		return $template;
 	}
+
+	// User doesn't have access. Swap to a style-matched restricted template.
+	$pmpro_templates_dir = trailingslashit( dirname( __FILE__ ) ) . 'templates/';
+
+	// Look for a style-matched restricted template, fall back to default.
+	if ( ! empty( $variant ) && file_exists( $pmpro_templates_dir . 'content-download-pmpro_' . $variant . '.php' ) ) {
+		$template = $pmpro_templates_dir . 'content-download-pmpro_' . $variant . '.php';
+	} else {
+		$template = $pmpro_templates_dir . 'content-download-pmpro.php';
+	}
+
 	return $template;
 }
-add_filter('dlm_get_template_part', 'pmprodlm_dlm_get_template_part', 10, 3);
+add_filter( 'dlm_get_template_part', 'pmprodlm_dlm_get_template_part', 10, 4 );
 
-function pmprodlm_shortcode_download_content( $content, $download_id, $atts ) {
-	global $current_user;
-	if(empty($atts['template']) && (function_exists( 'pmpro_hasMembershipLevel' )) ) {
-		if ( !pmpro_has_membership_access( $download_id ) )
-		{
-			$dlm_download = pmprodlm_get_download( $download_id );
-			if ( !empty( $dlm_download ) && $dlm_download->exists() )
-			{
-				$download_membership_levels = pmprodlm_getDownloadLevels($dlm_download);
-				$content .= '<a href="';
-				if(count($download_membership_levels[0]) > 1 || empty($download_membership_levels[0][0]))
-					$content .= esc_url( pmpro_url('levels') );
-				else
-					$content .= esc_url( pmpro_url("checkout", "?level=" . $download_membership_levels[0][0], "https") );
-				$content .= '">' . esc_html( $dlm_download->get_the_title() ) . '</a>';
-				$content .= ' (' . esc_html__( 'Membership Required', 'pmpro-download-monitor' ) . ': ' . esc_html( $download_membership_levels[1] ) . ')';
-				$content = apply_filters("pmprodlm_shortcode_download_content_filter", $content);
-			} 
-			else 
-			{
-				$content = '[' . esc_html__( 'Download not found', 'pmpro-download-monitor' ) . ']';
-			}
-		}
-	}
-	return $content;
-}
-add_filter('dlm_shortcode_download_content', 'pmprodlm_shortcode_download_content', 10, 3);
-
+/**
+ * Display the PMPro no-access message on the DLM no-access page.
+ *
+ * Shows the appropriate membership required message when a user
+ * is denied access to a download. Uses pmpro_get_no_access_message()
+ * on PMPro 3.1+ and falls back to legacy message handling for older versions.
+ *
+ * @since .1
+ *
+ * @param DLM_Download $download The Download Monitor download object.
+ */
 function pmprodlm_dlm_no_access_after_message($download) {
 	global $current_user;
 	if ( function_exists( 'pmpro_hasMembershipLevel' ) ) {
@@ -225,9 +262,15 @@ function pmprodlm_dlm_no_access_after_message($download) {
 }
 add_action('dlm_no_access_after_message', 'pmprodlm_dlm_no_access_after_message', 10, 2);
 
-/*
-Function to add links to the plugin row meta
-*/
+/**
+ * Add documentation and support links to the plugin row meta.
+ *
+ * @since .1
+ *
+ * @param array  $links Array of existing plugin row meta links.
+ * @param string $file  Path to the plugin file relative to the plugins directory.
+ * @return array Modified array of plugin row meta links.
+ */
 function pmprodlm_plugin_row_meta($links, $file) {
 	if(strpos($file, 'pmpro-download-monitor.php') !== false)
 	{
