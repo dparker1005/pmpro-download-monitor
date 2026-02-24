@@ -163,8 +163,19 @@ function pmprodlm_dlm_get_template_part( $template, $slug, $name, $args = array(
 		);
 	}
 
-	// If user has access, return the DLM template unchanged.
+	// If user has access, return the DLM template (corrected for deprecated names).
 	if ( pmpro_has_membership_access( $dlm_download->get_id() ) ) {
+		// If the name was normalized from a deprecated pmpro_* name, DLM will have
+		// resolved the wrong template file. Re-resolve using the corrected variant.
+		if ( $name !== $variant ) {
+			$template_file = 'content-download' . ( ! empty( $variant ) ? '-' . $variant : '' ) . '.php';
+			$theme_template = locate_template( 'download-monitor/' . $template_file );
+			if ( ! empty( $theme_template ) ) {
+				$template = $theme_template;
+			} elseif ( defined( 'DLM_PLUGIN_FILE' ) && file_exists( plugin_dir_path( DLM_PLUGIN_FILE ) . 'templates/' . $template_file ) ) {
+				$template = plugin_dir_path( DLM_PLUGIN_FILE ) . 'templates/' . $template_file;
+			}
+		}
 		return $template;
 	}
 
