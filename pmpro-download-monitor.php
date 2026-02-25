@@ -196,80 +196,25 @@ add_filter( 'dlm_get_template_part', 'pmprodlm_dlm_get_template_part', 10, 4 );
 /**
  * Display the PMPro no-access message on the DLM no-access page.
  *
- * Shows the appropriate membership required message when a user
- * is denied access to a download. Uses pmpro_get_no_access_message()
- * on PMPro 3.1+ and falls back to legacy message handling for older versions.
- *
  * @since .1
  *
  * @param DLM_Download $download The Download Monitor download object.
  */
 function pmprodlm_dlm_no_access_after_message($download) {
-	global $current_user;
-	$content = '';
-	if ( function_exists( 'pmpro_hasMembershipLevel' ) ) {
-		if ( !pmpro_has_membership_access( $download->get_id() ) ) 
-		{
-			$hasaccess = pmpro_has_membership_access($download->get_id(), NULL, true);
-			if(is_array($hasaccess))
-			{
-				//returned an array to give us the membership level values
-				$post_membership_levels_ids = $hasaccess[1];
-				$post_membership_levels_names = $hasaccess[2];
-				$hasaccess = $hasaccess[0];
-			}
-
-			// PMPro 3.1+ message handling.
-			if ( function_exists( 'pmpro_get_no_access_message' ) ) {
-				if(empty($post_membership_levels_ids))
-					$post_membership_levels_ids = array();
-				if(empty($post_membership_levels_names))
-					$post_membership_levels_names = array();
-
-				echo wp_kses_post( pmpro_get_no_access_message( '', $post_membership_levels_ids, $post_membership_levels_names ) );
-				return;
-			}
-
-			if(empty($post_membership_levels_ids))
-				$post_membership_levels_ids = array();
-			if(empty($post_membership_levels_names))
-				$post_membership_levels_names = array();
-		
-			 //hide levels which don't allow signups by default
-			if(!apply_filters("pmpro_membership_content_filter_disallowed_levels", false, $post_membership_levels_ids, $post_membership_levels_names))
-			{
-				foreach($post_membership_levels_ids as $key=>$id)
-				{
-					//does this level allow registrations?
-					$level_obj = pmpro_getLevel($id);
-					if(!$level_obj->allow_signups)
-					{
-						unset($post_membership_levels_ids[$key]);
-						unset($post_membership_levels_names[$key]);
-					}
-				}
-			}
-		
-			$pmpro_content_message_pre = '<div class="pmpro_content_message">';
-			$pmpro_content_message_post = '</div>';
-			$sr_search = array("!!levels!!", "!!referrer!!");
-			$sr_replace = array(pmpro_implodeToEnglish($post_membership_levels_names), urlencode(site_url(sanitize_text_field(wp_unslash($_SERVER['REQUEST_URI'])))));
-			//get the correct message to show at the bottom
-			if($current_user->ID)
-			{
-				//not a member
-				$newcontent = apply_filters("pmpro_non_member_text_filter", stripslashes(get_option("pmpro_nonmembertext")));
-				$content .= $pmpro_content_message_pre . str_replace($sr_search, $sr_replace, $newcontent) . $pmpro_content_message_post;
-			}
-			else
-			{
-				//not logged in!
-				$newcontent = apply_filters("pmpro_not_logged_in_text_filter", stripslashes(get_option("pmpro_notloggedintext")));
-				$content .= $pmpro_content_message_pre . str_replace($sr_search, $sr_replace, $newcontent) . $pmpro_content_message_post;
-			}
-		}
+	// Make sure PMPro v3.1+ is installed.
+	if ( ! function_exists( 'pmpro_get_no_access_message' ) ) {
+		return;
 	}
-	echo wp_kses_post( $content );
+
+	// Check if the user has access to this download.
+	$hasaccess = pmpro_has_membership_access($download->get_id(), NULL, true);
+	if ( ! is_array( $hasaccess ) || ! empty( $hasaccess[0] ) ) {
+		// Invalid $hasaccess or the user has access to this post.
+		return;
+	}
+
+	// The user does not have access to this post. Show the "no access" message.
+	echo wp_kses_post( pmpro_get_no_access_message( '', $hasaccess[1], $hasaccess[2] ) );
 }
 add_action('dlm_no_access_after_message', 'pmprodlm_dlm_no_access_after_message', 10, 2);
 
