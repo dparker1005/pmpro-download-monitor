@@ -38,7 +38,7 @@ This is an official Add On for [Paid Memberships Pro](https://www.paidmembership
 1. Save your changes by clicking the "Update" button (or "Publish" if you are creating a new download).
 
 == Changelog ==
-= 1.0 - 2026-02-24 =
+= 1.0 - 2026-02-25 =
 * BUG FIX/ENHANCEMENT: Download Monitor blocks now correctly filter output for restricted downloads, showing restricted templates instead of download links for non-members. #12 (@dparker1005)
 * BUG FIX/ENHANCEMENT: Overhauled the template system for membership-restricted downloads. Templates now only render the restricted state and match Download Monitor v4.9.6 patterns including `DLM_Utils` attributes, Gutenberg `className` support, and `before/after` link hooks. #12 (@dparker1005)
 * BUG FIX/ENHANCEMENT: Now using `pmpro_get_no_access_message()` for PMPro 3.1+ no-access messages on the Download Monitor no-access page. #10 (@dparker1005)
