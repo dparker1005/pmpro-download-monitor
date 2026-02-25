@@ -7,10 +7,10 @@
 ### Welcome to the Paid Memberships Pro - Download Monitor Integration GitHub Repository
 Protect downloads for members only and charge for access to downloadable files using [Download Monitor and Paid Memberships Pro](https://wordpress.org/plugins/download-monitor/).
 
-For more information please visit [Paid Memberships Pro - Download Monitor Integration](https://linktoplugin.com)
+For more information please visit [Paid Memberships Pro - Download Monitor Integration](https://www.paidmembershipspro.com/add-ons/pmpro-download-monitor/)
 
 ## Installation ##
-For detailed installation steps, visit the [Paid Memberships Pro - Download Monitor Integration](https://linktoplugin.com) page.
+For detailed installation steps, visit the [Paid Memberships Pro - Download Monitor Integration](https://www.paidmembershipspro.com/add-ons/pmpro-download-monitor/) page.
 
 1. Download the current development ZIP file directly: `https://github.com/strangerstudios/pmpro-download-monitor/archive/dev.zip`
 

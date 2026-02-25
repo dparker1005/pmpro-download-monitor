@@ -3,7 +3,7 @@
  * Plugin Name: Paid Memberships Pro - Download Monitor Integration Add On
  * Plugin URI: https://www.paidmembershipspro.com/add-ons/pmpro-download-monitor/
  * Description: Require membership for downloads when using the Download Monitor plugin.
- * Version: .2.1
+ * Version: 1.0
  * Author: Paid Memberships Pro
  * Author URI: https://www.paidmembershipspro.com
  * Text Domain: pmpro-download-monitor
@@ -14,7 +14,7 @@
 /**
  * Add the dlm_download CPT to the list of PMPro restrictable post types.
  *
- * @since TBD
+ * @since 1.0
  *
  * @param array $post_types Array of post types that PMPro can restrict.
  * @return array Modified array of restrictable post types.
@@ -31,7 +31,7 @@ add_filter( 'pmpro_restrictable_post_types', 'pmprodlm_restrictable_post_types' 
  * Filters out levels that do not allow signups unless overridden
  * by the pmpro_membership_content_filter_disallowed_levels filter.
  *
- * @since .1
+ * @since 0.1
  *
  * @param DLM_Download $dlm_download The Download Monitor download object.
  * @return array {
@@ -82,7 +82,7 @@ function pmprodlm_getDownloadLevels($dlm_download)
  * Hooked to dlm_can_download to block direct download access
  * for users without the required membership level.
  *
- * @since .1
+ * @since 0.1
  *
  * @param bool         $can_download Whether the user can download the file.
  * @param DLM_Download $download     The Download Monitor download object.
@@ -117,7 +117,7 @@ add_filter( 'dlm_can_download', 'pmprodlm_can_download', 10, 2 );
  *
  * Legacy pmpro_* template names are normalized and trigger a _doing_it_wrong notice.
  *
- * @since TBD
+ * @since 0.1
  *
  * @param string $template The path to the template file.
  * @param string $slug     The template slug (e.g. 'content-download').
@@ -159,7 +159,7 @@ function pmprodlm_dlm_get_template_part( $template, $slug, $name, $args = array(
 				esc_html( $name ),
 				esc_html( $suggested )
 			),
-			'TBD'
+			'1.0'
 		);
 	}
 
@@ -196,7 +196,7 @@ add_filter( 'dlm_get_template_part', 'pmprodlm_dlm_get_template_part', 10, 4 );
 /**
  * Display the PMPro no-access message on the DLM no-access page.
  *
- * @since .1
+ * @since 0.1
  *
  * @param DLM_Download $download The Download Monitor download object.
  */
@@ -221,7 +221,7 @@ add_action('dlm_no_access_after_message', 'pmprodlm_dlm_no_access_after_message'
 /**
  * Add documentation and support links to the plugin row meta.
  *
- * @since .1
+ * @since 0.1
  *
  * @param array  $links Array of existing plugin row meta links.
  * @param string $file  Path to the plugin file relative to the plugins directory.
